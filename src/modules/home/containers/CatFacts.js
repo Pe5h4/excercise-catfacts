@@ -32,7 +32,7 @@ function CatFacts(props) {
 
 		Get another fact with `Get fact` button
 
-		Remove the breeds from the table by `Remove breeds``
+		Remove the breeds from the table by `Remove breeds`
 
 		All the components you need are already imported
 
@@ -44,7 +44,7 @@ function CatFacts(props) {
 				<Col md={8}>
 					<Card>
 						<CardHeader>
-							No cat fact yet :-(
+							<strong>Cat fact: </strong> No cat fact yet :-(
 						</CardHeader>
 						<CardBody>
 							<Table>

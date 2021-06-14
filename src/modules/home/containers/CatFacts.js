@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable } from 'asab-webui';
 import { Container, Button, Card, CardHeader, CardFooter, CardBody, Table, Col, Row } from 'reactstrap';
 import axios from 'axios'
 

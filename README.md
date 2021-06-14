@@ -2,6 +2,8 @@
 
 This is about to test your availability to work with react-hooks and its components.
 
+Live preview of the app is here: https://cat-facts-excercise.netlify.app/#/catfacts
+
 ## Clone the repo
 
 ```

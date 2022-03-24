@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import { useHistory } from "react-router-dom";
 
 import {
 	Container, Row, Col,
@@ -20,10 +19,9 @@ import {
 		"AccessControlScreen": {
 			"Access control": "Access control",
 			"See your details": "You can see your access permissions here",
-			"Current tenant": "Current tenant",
+			"Tenant": "Tenant",
 			"Roles": "Roles",
-			"Resources": "Resources",
-			"Previous screen": "Back to previous screen"
+			"Resources": "Resources"
 		}
 	}
 
@@ -47,9 +45,8 @@ export default AccessControlScreen;
 
 function AccessControlCard(props) {
 	const { t, i18n } = useTranslation();
-	let history = useHistory();
-	let userinfo = props.userinfo;
-	let App = props.app;
+	const userinfo = props.userinfo;
+	const App = props.app;
 	let currentTenant;
 	// Check Tenant service availability
 	if (App.Services.TenantService) {
@@ -66,53 +63,41 @@ function AccessControlCard(props) {
 			</CardHeader>
 
 			<CardBody>
-				{App.Services.TenantService &&
-					<React.Fragment>
+				{ userinfo ? (
+					<>
+						{App.Services.TenantService &&
+							<React.Fragment>
+								<Row>
+									<Col>
+										<h5>{t('AccessControlScreen|Tenant')}</h5>
+									</Col>
+									<Col>
+										<p style={{marginBottom: "5px"}}>{currentTenant}</p>
+									</Col>
+								</Row>
+								<hr/>
+							</React.Fragment>
+						}
 						<Row>
 							<Col>
-								<h5>{t('AccessControlScreen|Current tenant')}</h5>
+								<h5>{t('AccessControlScreen|Roles')}</h5>
 							</Col>
-							<Col>
-								<ul style={{padding: 0}}>
-									<li>{currentTenant}</li>
-								</ul>
-							</Col>
+							<ItemToRender userinfo={userinfo} item='roles' />
 						</Row>
 						<hr/>
-					</React.Fragment>
-				}
-				<Row>
-					<Col>
-						<h5>{t('AccessControlScreen|Roles')}</h5>
-					</Col>
-					<ItemToRender userinfo={userinfo} item='roles' />
-				</Row>
-				<hr/>
-				<Row>
-					<Col>
-						<h5>{t('AccessControlScreen|Resources')}</h5>
-					</Col>
-					<ItemToRender userinfo={userinfo} item='resources' />
-				</Row>
+						<Row>
+							<Col>
+								<h5>{t('AccessControlScreen|Resources')}</h5>
+							</Col>
+							<ItemToRender userinfo={userinfo} item='resources' />
+						</Row>
+					</>
+					) : (
+					<div className="text-center">
+						<h5>{t("AccessControlScreen|The user information is invalid, you session is likely expired.")}</h5>
+					</div>
+				)}
 			</CardBody>
-			<CardFooter>
-				<Row className="justify-content-center">
-					<Col>
-						<Button
-							size="sm"
-							outline
-							block
-							color="link"
-							type="button"
-							onClick={() => history.goBack()}
-						>
-							<i className="cil-arrow-thick-left"></i>
-							{' '}
-							{t("AccessControlScreen|Previous screen")}
-						</Button>
-					</Col>
-				</Row>
-			</CardFooter>
 		</Card>
 		)
 }
@@ -122,15 +107,13 @@ function ItemToRender(props) {
 	let item = props.item;
 	return(
 		<Col>
-			<ul style={{padding: 0}}>
 			{props.userinfo[item] ?
 				props.userinfo[item].map(itm => {
-					return(<li key={itm}>{itm}</li>)
+					return(<p style={{marginBottom: "5px"}} key={itm}>{itm}</p>)
 				})
 				:
 				null
 			}
-			</ul>
 		</Col>
 		)
 }

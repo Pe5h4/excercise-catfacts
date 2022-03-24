@@ -9,65 +9,69 @@ import { Helmet } from "react-helmet";
 
 import { Fade } from 'reactstrap';
 
-import { AppBreadcrumb2 as AppBreadcrumb } from '@coreui/react';
-
+import Main from './Main';
 import Header from './Header';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
 import SplashScreen from './SplashScreen';
-import { Spinner } from './Spinner';
+import Breadcrumbs from './Breadcrumbs';
+import ErrorHandler from './ErrorHandler';
+import Alerts from './Alerts';
+import { Spinner } from '../components/Spinner';
 
-import AlertsComponent from '../alerts/AlertsComponent';
-import alertsReducer from '../alerts/reducer';
-
-import helpButtonReducer from '../helpButton/reducer';
+import alertsReducer from './Alerts/reducer';
+import sidebarReducer from './Sidebar/reducer';
+import headerHelpButtonReducer from './Header/reducer';
 
 import ReduxService from '../services/ReduxService';
 import ConfigService from '../config/ConfigService';
 import HeaderService from '../services/HeaderService';
 import FooterService from '../services/FooterService';
+import SidebarService from './Sidebar/service';
+
+import TenantSelectionCard from '../modules/tenant/selector/TenantSelectionCard';
 
 import { ADD_ALERT, SET_ADVANCED_MODE, CHANGE_HELP_URL } from '../actions';
 
 
 class Application extends Component {
 
-/*
-Example of use hasSidebar and hasBreadcrumb.
-It must be set in Application.
-If not set, it is considered as true.
-
-...
-
-const config = {
-	hasSidebar: false,
-	hasBreadcrumb: false
-}
-
-
-ReactDOM.render((
-	<BrowserRouter>
-		<Application modules={modules} {...config}/>
-	</BrowserRouter>
-), document.getElementById('app'));
-
-...
-
-Example of settings in Module of the Application
-Following above settings, this will show the item in
-the header and when the screen is diminished (e.g. screening
-using the mobile phone), the item is moved to the sidebar and
-it is accessible by the sidebar toggler button.
-
-...
-
-	app.Navigation.addItem({
-		name: 'Item 1',
-		url: '',
-	});
-
-...
-	*/
+	/*
+	Example of use hasSidebar and disableAppBreadcrumbs.
+	It must be set in Application.
+	If not set, it is considered as true.
+	
+	...
+	
+	const config = {
+		hasSidebar: false,
+		disableAppBreadcrumbs: true
+	}
+	
+	
+	ReactDOM.render((
+		<BrowserRouter>
+			<Application modules={modules} {...config}/>
+		</BrowserRouter>
+	), document.getElementById('app'));
+	
+	...
+	
+	Example of settings in Module of the Application
+	Following above settings, this will show the item in
+	the header and when the screen is diminished (e.g. screening
+	using the mobile phone), the item is moved to the sidebar and
+	it is accessible by the sidebar toggler button.
+	
+	...
+	
+		app.Navigation.addItem({
+			name: 'Item 1',
+			url: '',
+		});
+	
+	...
+		*/
 
 	constructor(props) {
 		super(props);
@@ -88,10 +92,12 @@ it is accessible by the sidebar toggler button.
 
 		this.HeaderService = new HeaderService(this, "HeaderService");
 		this.FooterService = new FooterService(this, "FooterService");
+		this.SidebarService = new SidebarService(this, "SidebarService");
 
 		this.ReduxService.addReducer("alerts", alertsReducer);
-		this.ReduxService.addReducer("advmode", AdvancedModeReducer);
-		this.ReduxService.addReducer("helpButton", helpButtonReducer);
+		this.ReduxService.addReducer("advmode", advancedModeReducer);
+		this.ReduxService.addReducer("helpButton", headerHelpButtonReducer);
+		this.ReduxService.addReducer("sidebar", sidebarReducer);
 
 		this.DefaultPath = props.defaultpath;
 
@@ -110,7 +116,7 @@ it is accessible by the sidebar toggler button.
 		this.Config.dispatch(this.Store);
 		this.DevConfig.dispatch(this.Store);
 
-		this.Store.dispatch({ 
+		this.Store.dispatch({
 			type: CHANGE_HELP_URL,
 			payload: {
 				url: this.Config.get("default_help_url"),
@@ -135,17 +141,28 @@ it is accessible by the sidebar toggler button.
 
 			// Initialize statically imported modules
 			for (var i in that.Modules) {
-				that.Modules[i].initialize();
+				let ret = that.Modules[i].initialize();
+
+				// Transform result in the promise
+				// It unifies synchronous and asynchronous `initialize()` calls
+				let promise = Promise.resolve(ret);
+				await promise;
 			}
 		}
-		
-		modules_init().then(async function() {
+
+		modules_init().then(async function () {
 			that.Store.replaceReducer(combineReducers(that.ReduxService.Reducers));
 			that.Config.dispatch(that.Store);
 
 			// Initialize all services
 			for (var i in that.Services) {
-				that.Services[i].initialize();
+				let ret = that.Services[i].initialize();
+
+				// Transform result in the promise
+				// It unifies synchronous and asynchronous `initialize()` calls
+				let promise = Promise.resolve(ret);
+				await promise;
+
 				that.Config.dispatch(that.Store);
 			}
 
@@ -227,7 +244,7 @@ it is accessible by the sidebar toggler button.
 	axiosCreate(service, props) {
 		var service_url = this.getServiceURL(service);
 		if (service_url == undefined) {
-			this.addAlert('error', "Service URL is undefined, please check service paths passed to axios.");
+			this.addAlert('danger', "ASABApplicationContainer|Service URL is undefined, please check service paths passed to axios", 5, true);
 			return undefined;
 		}
 
@@ -237,7 +254,7 @@ it is accessible by the sidebar toggler button.
 		});
 
 		// Iterate through custom interceptors
-		for (let interceptor of this.AxiosInterceptors.keys()){
+		for (let interceptor of this.AxiosInterceptors.keys()) {
 			this.interceptorRequest(axios, interceptor);
 		}
 
@@ -267,7 +284,7 @@ it is accessible by the sidebar toggler button.
 		// Add a request interceptor
 		axios.interceptors.request.use(
 			interceptor,
-			function(error) {
+			function (error) {
 				return Promise.reject(error)
 			});
 	}
@@ -311,7 +328,7 @@ it is accessible by the sidebar toggler button.
 	createWebSocket(service, subpath) {
 		var socket_url = this.getWebSocketURL(service, subpath);
 		if (socket_url == undefined) {
-			this.addAlert('error', "WebSocket URL is undefined, please check service and subpath passed to WebSocket.");
+			this.addAlert('danger', "ASABApplicationContainer|WebSocket URL is undefined, please check service and subpath passed to WebSocket", 5, true);
 			return undefined;
 		}
 
@@ -401,12 +418,16 @@ it is accessible by the sidebar toggler button.
 		* success
 	*/
 
-	addAlert(level, message, expire = 5) {
+	addAlert(level, message, arg1, arg2) {
+		const expire = typeof arg1 === 'number' ? arg1 : typeof arg2 === 'number' ? arg2 : 5;
+		const shouldBeTranslated = typeof arg1 === 'boolean' ? arg1 : typeof arg2 === 'boolean' ? arg2 : false;
+
 		this.Store.dispatch({
 			type: ADD_ALERT,
 			level: level,
 			message: message,
-			expire: expire
+			expire: expire,
+			shouldBeTranslated: shouldBeTranslated
 		});
 	}
 
@@ -424,9 +445,9 @@ it is accessible by the sidebar toggler button.
 		});
 
 		if (enabled) {
-			this.addAlert('warning', "Advanced mode enabled.", 1);
+			this.addAlert('warning', "ASABApplicationContainer|Advanced mode enabled", 1, true);
 		} else {
-			this.addAlert('success', "Advanced mode disabled", 1);
+			this.addAlert('success', "ASABApplicationContainer|Advanced mode disabled", 1, true);
 		}
 	}
 
@@ -452,19 +473,21 @@ it is accessible by the sidebar toggler button.
 		}, [])
 	}
 
-
 	render() {
 		// Render the splash screen if needed
 		if (this.state.SplashscreenRequestors > 0) return (
 			<Provider store={this.Store}>
 				<div className="app">
-					<AlertsComponent app={this} />
+					<Suspense fallback={<></>}>
+						<Alerts app={this} />
+						<TenantSelectionCard app={this} />
+					</Suspense>
 					<SplashScreen app={this} />
 					{this.Config.get('title') != null && this.Config.get('title') != undefined ?
 						<Helmet>
 							<title>{this.Config.get('site_title') ? this.Config.get('site_title') + " | " + this.Config.get('title') : this.Config.get('title')}</title>
 						</Helmet>
-						: null 
+						: null
 					}
 				</div>
 			</Provider>
@@ -476,7 +499,7 @@ it is accessible by the sidebar toggler button.
 					<Fade in={this.state.networking > 0} timeout={50} >
 						<div className="networking-indicator progress-bar progress-bar-animated progress-bar-striped" ></div>
 					</Fade>
-					<AlertsComponent app={this} />
+					<Alerts app={this} />
 					{this.Config.get('title') != null && this.Config.get('title') != undefined ?
 						<Helmet>
 							<title>{this.Config.get('site_title') ? this.Config.get('site_title') + " | " + this.Config.get('title') : this.Config.get('title')}</title>
@@ -484,37 +507,49 @@ it is accessible by the sidebar toggler button.
 						: null
 					}
 					<Header app={this} />
-					<div className="app-body">
-						{(this.props.hasSidebar || typeof this.props.hasSidebar === 'undefined') ?
-							<Sidebar app={this} navigation={this.Navigation} display="lg" /> :
-							<Sidebar app={this} navigation={this.Navigation} display="xs" />}
-						<main className="main">
-							{(this.props.hasBreadcrumb || typeof this.props.hasBreadcrumb === 'undefined') ?
-								<AppBreadcrumb appRoutes={this.Router.Routes} router={router} />
-								: null}
-							<Suspense 
-								fallback={<div style={{ marginTop: "1rem" }}><Spinner /></div>}
-							>
-								<Switch>
-									{this.Router.Routes.map((route, idx) => {
-										return route.component ? (
-											<Route
-												key={idx}
-												path={`${route.path}`}
-												exact={route.exact}
-												name={route.name}
-												render={props => (
-													<route.component app={this} {...props} {...route.props} />
-												)}
-											/>
-										) : (null);
-									})}
-									{this.DefaultPath != undefined ? <Redirect from="/" to={this.DefaultPath} /> : null}
-								</Switch>
-							</Suspense>
-						</main>
-					</div>
-					<Footer app={this} />
+					<ErrorHandler isParentError={true}>
+						<div className="app-body">
+							{
+								(this.props.hasSidebar || typeof this.props.hasSidebar === 'undefined') &&
+								<Sidebar
+									app={this}
+									navigation={this.Navigation}
+									display="lg"
+									sidebarItemsOrder={this.props.sidebarItemsOrder}
+								/>
+							}
+							<Main hasSidebar={this.props.hasSidebar}>
+								<Suspense
+									fallback={<div style={{ marginTop: "1rem" }}><Spinner /></div>}
+								>
+									<Switch>
+										{this.Router.Routes.map((route, idx) => {
+											return route.component ? (
+												<Route
+													key={idx}
+													path={`${route.path}`}
+													exact={route.exact}
+													name={route.name}
+													render={props => (
+														<>
+															{!this.props.disableAppBreadcrumbs && !route.disableContainerBreadcrumbs ?
+																<Breadcrumbs routes={this.Router.Routes} match={props.match} />
+																: null}
+															<ErrorHandler>
+																<route.component app={this} {...props} {...route.props} />
+															</ErrorHandler>
+														</>
+													)}
+												/>
+											) : (null);
+										})}
+										{this.DefaultPath != undefined ? <Redirect from="/" to={this.DefaultPath} /> : null}
+									</Switch>
+								</Suspense>
+							</Main>
+						</div>
+						<Footer app={this} />
+					</ErrorHandler>
 				</div>
 			</Provider>
 		)
@@ -566,6 +601,7 @@ class Navigation {
 			items: this.Items
 		}
 	}
+
 }
 
 
@@ -578,7 +614,7 @@ const advModeInitialState = {
 	enabled: false,
 }
 
-function AdvancedModeReducer(state = advModeInitialState, action) {
+function advancedModeReducer(state = advModeInitialState, action) {
 	switch (action.type) {
 
 		case SET_ADVANCED_MODE: {
@@ -591,4 +627,3 @@ function AdvancedModeReducer(state = advModeInitialState, action) {
 			return state
 	}
 }
-

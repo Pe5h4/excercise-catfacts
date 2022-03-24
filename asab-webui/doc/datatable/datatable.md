@@ -118,8 +118,8 @@ If you want to change date format, then you should provide `datetime` as object 
 
 Optional property `json` is needed if data has nested objects inside itself. It is boolean and it returns `react-json-view` components into cells below the header.
 
-Optional property `actionButton` is needed to put into row of datatable ellipsis with actions dropdown for some list of actions. This property is an object with two children `title` which is string and will be placed as drodpown header and `actions` which is list of objects (actions). Those objects in `actions` list also must have two properties: string `name` and function `onClick`. Property `name` will be placed as dropdown item, clicking on it calls `onClick` function which accpets two argument `row` and `header`. `row` is appropriate row object and `header` is header where you defined `actionButton`.
-Also `actionButton` has allignment to right so header with action buttons should be the last one in headers list.
+Optional property `actionButton` is needed to put an ellipsis with actions dropdown for some list of actions into the row of the datatable. This property is an object with two children — `title`, which is a string and will be placed as a dropdown header, and `actions`, which is a list of objects (actions). Those objects in the `actions` list have two required properties: a string `name` and a function `onClick` and one optional property `icon`. Property `name` will be placed as a dropdown item, clicking on it calls the `onClick` function, which accepts two arguments — `row` and `header`. `row` is the appropriate row object and `header` is a header where you defined an `actionButton`. A property `icon` is a string with the Core UI icon.
+Also `actionButton` has an alignment to the right, so the header with action buttons should be the last one in the headers list.
 
 About how to use optional property `customComponent` you may find information in section Custom Components.
 
@@ -138,7 +138,8 @@ headers: [
 		actions: [
 			{ 
 				name: "Action 1",
-				onClick(row, header) { alert(row._id); }
+				onClick(row, header) { alert(row._id); },
+				icon: "cib-jenkins"
 			},
 		]
 	}}
@@ -218,7 +219,7 @@ Example of fetched data:
 
 # Optional
 
-`DataTable` can also accept optional props `limit`, `setLimit`, `createButton`, `buttonWithAuthz`, `search`, `onSearch`, `isLoading` and `onDownload`.
+`DataTable` can also accept optional props `limit`, `setLimit`, `createButton`, `buttonWithAuthz`, `customButton`, `customComponent`, `search`, `onSearch`, `isLoading`, `noItemsComponent`, `customCardBodyComponent` and `onDownload`.
 
 Example of `DataTable` with all props:
 
@@ -236,8 +237,11 @@ Example of `DataTable` with all props:
 	onSearch={onSearch}
 	createButton={{ text: "Create", icon: 'icon', pathname: '#' }}
 	buttonWithAuthz={buttonWithAuthzProps}
+	customButton={customButton}
+	customComponent={customComponent}
 	onDownload={onDownload}
 	isLoading={isLoading}
+	noItemsComponent={noItemsComponent}
 />
 ```
 
@@ -317,6 +321,65 @@ Example of `buttonWithAuthz`:
 		<DataTable
 			...
 			buttonWithAuthz={buttonWithAuthzProps}
+			...
+		/>
+	)
+
+```
+
+And there is also one prop `customButton` which we may consider as custom button. It just uses `Button` component with tag `span` from `reactstrap` library.
+Prop `customButton` accepts object with three properties:
+1) `text` - title which will be displayed inside of button
+2) `icon` - optional property which displays icon alognsied the button's title
+3) `props` - object with props which will be passed to `Button` component of `reactstrap`
+
+Example of `customButton`:
+```
+...
+	const customButton = {
+		text: "Custom button",
+		icon: "cil-warning",
+		props: {
+			color: "primary",
+			onClick: () => {
+				alert("This is warning after button is clicked");
+			}
+		}
+	}
+	...
+
+	return (
+		...
+		<DataTable
+			...
+			customButton={customButton}
+			...
+		/>
+	)
+
+```
+
+Prop `customComponent` is used in case if you need to create custom component in the header of `DataTable`. It accepts some component which will be placed at the end of the header:
+
+Example of `customComponent`:
+```
+...
+	const customComponent = (
+		<Button
+			size="sm"
+			color="success"
+			onClick={nextPage}
+		>
+			Next Page
+		</Button>
+	);
+	...
+
+	return (
+		...
+		<DataTable
+			...
+			customComponent={customComponent}
 			...
 		/>
 	)
@@ -414,6 +477,55 @@ return (
 )
 ```
 
+Prop `noItemsComponent` is used if you want to define custom component or string for displaying message when number of items in data passed into `DataTable` is zero. As string just write message you want to display. 
+
+Example of using `noItemsComponent` as string:
+```
+...
+import { DataTable } from 'asab-webui';
+
+...
+	return (
+		<DataTable
+		...
+		noItemsComponent="Some custom message"
+		/>
+	);
+```
+
+Also you can pass into `noItemsComponent` your custom component instead of string. `DataTable` will render it instead of default one with default styles.
+
+Example of using `noItemsComponent` as string:
+```
+...
+import { DataTable } from 'asab-webui';
+
+...
+	return (
+		<DataTable
+		...
+		noItemsComponent={<div className="m-auto text-bold text-primary">Some custom message</div>}
+		/>
+	);
+
+```
+
+Prop `customCardBodyComponent` is used to place your custom component in card's body between card header and table itself.
+
+Usage:
+```js
+...
+import { DataTable } from 'asab-webui';
+
+...
+	return (
+		<DataTable
+			customCardBodyComponent={<div className="m-auto text-bold text-primary">Some custom description message</div>}
+		/>
+	);
+
+```
+
 ### Custom Components
 
 In some cases you may understand that in `DataTable` you need to have some external component instead of regular cells. Or you may just want to somehow style your cells. Then `customComponent` property of header may help you.
@@ -493,7 +605,8 @@ props: {
                                     // as <i className={icon}></i> in case icon is string.
   },
   onSearch?: function, // function that is called in 500ms after changes has been made in search input box
-  isLoading?: boolean
+  isLoading?: boolean, // indicator for DataTable for showing spinner,
+  noItemsComponent?: string | React.component // custom component for displaying message when there are no items
 }
 
 ```

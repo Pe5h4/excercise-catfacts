@@ -1,55 +1,96 @@
 # Use of Authorization
 
-The authorization is an optional feature of ASAB Web UI.
+## Authorization with tenant
+
+The authorization is an optional **softcheck** feature of ASAB Web UI.
 
 It is connected to `Tenant` module of ASAB Web UI.
 
-It provides two main functions:
+It provides authorization of the user based on assigned tenants.
 
- 1. Authorize user based on assigned tenants
- 2. The list of user's authorized tenants for application in the TenantDropdown menu
- 3. The active/current tenant
+Authorization is enabled for every application, if not defined otherwise.
 
-This includes also the tob-bar selector for switching the current tenant.
+**Exception**: Users with `superuser` rights are authorized by default.
 
-Notes:
+### Disable authorization
 
-The tenant-enabled URL of the endpoint should start with the tenant: `/{tenant-id}/path...`
+`authorization` - if set to `disabled`, then the authorization is not applied.
 
-The active/current tenant is set in the React application initialization and stay constant.
-If the user decides to change the tenant, React application is restarted/reloaded.
-Only tenants authorized for the user are displayed.
-
-
-## Setup
-
-In the top-level `index.js` of your ASAB UI application, load the Tenant module and add to ConfigDefaults `Authorization` with keys and values.
-
-`Authorize` must be set to `true` to enable the feature
-
-`Resource` is used for setting up resource for `rbac` endpoint. By default is set to `tenant:access`
-
-`UnauthorizedLogoutTimeout` is a timeout period on which the screen will stay in SplashScreen mode before it log out the unauthorized user. Default value is 60000 aka 60s.
-
-<!-- TODO: Set up also BASE_URL, Microservice, Subpaths, etc... -->
+Example of disabling the authorization:
 
 ```
-const modules = [];
+module.exports = {
+	app: {
+		...
+		authorization: "disabled",
+		...
+	},
+}
+```
+
+### Set logout timeout
+
+When user is not authorized by tenant, timeout period is set before logouting the user. During that period, SplashScreen is displayed to the user. Default value is 60000 aka 60s.
+
+Example of setting/modifying the logout timeout period:
+
+```
+module.exports = {
+	app: {
+		...
+		authorizationLogoutTimeout: 120000,
+		...
+	},
+}
+```
+
+
+## Sidebar item/child authorization with resource
+
+This is an optional **softcheck** on user's resource and their ability to display particular item in the Sidebar navigation.
+
+If resource implemented as a property of a Navigation item in the application Module does not meet user's resources, the Navigation item/child is not rendered in the Sidebar of the application.
+
+This behavior is convenient, when limited access for users without particular rights is needed.
+
+**Exception**: Users with `superuser` rights are authorized by default.
+
+For more info about Sidebar, please refer to `/doc/sidebar.md`
+
+### Setup
+
+The application resource has to be set in the application's Module, e.g.
+
+```
 
 ...
 
-import TenantModule from 'asab-webui/modules/tenant';
-modules.push(TenantModule);
+	export default class MyAppModule extends Module {
+		constructor(app, name) {
+			super(app, "MyAppModule");
 
-let ConfigDefaults = {
-	Authorization: { Authorize: true, Resource: "tenant:access", UnauthorizedLogoutTimeout: 60000},
-};
+			app.Router.addRoute({
+				path: '/myitem/credentials',
+				exact: true,
+				name: 'Credentials',
+				component: CredentialsListContainer
+			});
+
+			app.Navigation.addItem({
+				name: 'My Sidebar Item',
+				icon: 'cil-address-book',
+				resource: 'myitem:access', // Here the resource property has to be implemented
+				children: [
+					{
+						name: 'Credentials',
+						url: '/myitem/credentials',
+						icon: 'cil-people'
+					}
+				]
+			});
+		}
+	}
 
 ...
 
-ReactDOM.render((
-	<HashRouter>
-		<Application modules={modules} defaultpath="/" configdefaults={ConfigDefaults}/>
-	</HashRouter>
-), document.getElementById('app'));
 ```

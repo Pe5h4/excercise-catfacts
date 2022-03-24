@@ -12,7 +12,7 @@ export class SeaCatAuthApi {
 		app: {
 			BASE_URL: 'http://localhost:3000',
 			API_PATH: 'api',
-			SERVICES: {openidconnect: 'openidconnect', rbac: 'rbac'},
+			SERVICES: {openidconnect: 'openidconnect'},
 			...
 	*/
 
@@ -82,27 +82,6 @@ export class SeaCatAuthApi {
 		});
 		return this.OidcAPI.post('/token',
 			qs.toString()
-		);
-	}
-
-	/*
-		Verify access
-
-		To set up access verification with tenant, the tenant
-		has to be set as a first optional argument
-
-		e.g. Api.verify_access(access_token, resource, tenant)
-	*/
-	verify_access(access_token, resource, ...args) {
-		let rsrc = resource ? resource : "tenant:access";
-		let rbacPath = "/rbac/" + rsrc;
-		if (this.App.Services.TenantService) {
-			// Obtain tenant from optional arguments
-			let tenant = args[0];
-			rbacPath = "/rbac/" + tenant + "/" + rsrc;
-		}
-		return this.SeaCatAuthAPI.get(rbacPath,
-			{ headers: { 'Authorization': 'Bearer ' + access_token }}
 		);
 	}
 

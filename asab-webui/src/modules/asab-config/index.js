@@ -1,47 +1,56 @@
 import React, { Component } from 'react';
 import Module from 'asab-webui/abc/Module';
-import ConfigContainer from "./ConfigContainer";
-import MicroservicesContainer from "./MicroservicesContainer";
+import ConfigContainer from "./ConfigContainers/ConfigContainer";
+import MicroservicesContainer from "./MicroservicesContainers/MicroservicesContainer";
+import MicroserviceDetailContainer from "./MicroservicesContainers/MicroserviceDetailContainer";
 
+import asabConfigReducer from './ConfigContainers/reducer';
+
+import "./ConfigContainers/configuration.css";
 
 export default class ConfigModule extends Module {
 	constructor(app, name) {
 		super(app, "ASABConfigModule");
-		this.App = app;
-		this.Config = app.config;
-		this.Navigation = app.Navigation;
-		this.Router = app.Router;
+		app.ReduxService.addReducer("asab_config", asabConfigReducer);
 
-		this.Router.addRoute({
-			path: "/config/:configType/:configName",
-			exact: true,
-			name: "Edit",
-			component: ConfigContainer,
-		});
 
-		this.Router.addRoute({
-			path: "/config/microservices",
+		app.Router.addRoute({
+			path: "/config/svcs",
 			exact: true,
 			name: "Microservices",
 			component: MicroservicesContainer,
 		});
 
-		this.Navigation.addItem({
+		app.Router.addRoute({
+			path: "/config/svcs/:svc_name",
+			exact: true,
+			name: "Microservice",
+			component: MicroserviceDetailContainer,
+		})
+
+		app.Router.addRoute({
+			path: "/config/:configType/:configName",
+			exact: true,
+			name: "Configuration",
+			component: ConfigContainer,
+		});
+
+		app.Navigation.addItem({
+			name: "Configuration",
+			url: "/config/$/$",
+			icon: "cil-settings"
+		});
+
+		app.Navigation.addItem({
 			name: 'Maintenance',
-			icon: 'cil-apps-settings',
+			icon: "cil-apps-settings",
 			children: [
 				{
-					name: "Configuration",
-					url: "/config/$/$",
-					icon: 'cil-settings',
-				},
-				{
 					name: "Microservices",
-					url: "/config/microservices",
-					icon: 'cil-list',
+					url: "/config/svcs",
+					icon: "cil-list"
 				}
 			]
 		});
-
 	}
 }

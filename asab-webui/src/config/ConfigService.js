@@ -30,7 +30,7 @@ Example of `config.json` content:
 export default class ConfigService extends Service {
 
 
-	constructor(app, serviceName="ConfigService") {
+	constructor(app, serviceName = "ConfigService") {
 		super(app, serviceName);
 		app.ReduxService.addReducer("config", ConfigReducer);
 
@@ -40,18 +40,15 @@ export default class ConfigService extends Service {
 
 
 	initialize() {
-		let config_url = this.App.Config.get('CONFIG_PATH');
-
-		// Provide backward compatibility with CONFIG_URL
-		if (this.App.Config.get('CONFIG_URL')) {
-			config_url = this.App.Config.get('CONFIG_URL');
-		}
+		// dynamic_config_url is taken from content atribute of meta element
+		// <meta name="x-config" content="https..." />
+		const dynamic_config_url = document.getElementsByName('x-config')[0]?.content;
 
 		// Check on undefined configuration
-		if (config_url !== undefined) {
+		if (dynamic_config_url !== undefined) {
 			this.App.addSplashScreenRequestor(this);
-			let axios = Axios.create({baseURL: window.location.protocol + '//' + window.location.host});
-			axios.get(config_url).then(response => {
+			let axios = Axios.create({ baseURL: window.location.protocol + '//' + window.location.host });
+			axios.get(dynamic_config_url).then(response => {
 				// Check on status and content-type
 				if ((response.status === 200) && (response.headers["content-type"] !== undefined && response.headers["content-type"].includes("application/json"))) {
 					this.Config._dynamic_config = response.data;
@@ -59,14 +56,14 @@ export default class ConfigService extends Service {
 						this.Config.dispatch(this.App.Store);
 					}
 				} else {
-					this.App.addAlert("danger", "Incorrect/invalid config file downloaded.");
+					this.App.addAlert("danger", "ASABConfigService|Incorrect/invalid config file downloaded", 5, true);
 				}
 			})
-			.catch(error => {
-				console.log(error);
-				this.App.addAlert("danger", "Error when downloading a config file. The path might be corrupted.");
-			})
-			.then(() => this.App.removeSplashScreenRequestor(this));
+				.catch(error => {
+					console.log(error);
+					this.App.addAlert("danger", "ASABConfigService|Error when downloading a config file. The path might be corrupted", 5, true);
+				})
+				.then(() => this.App.removeSplashScreenRequestor(this));
 		}
 	}
 
@@ -87,7 +84,7 @@ export default class ConfigService extends Service {
 			}
 		}
 
-		
+
 		this.Config.dispatch(this.App.Store);
 	}
 
@@ -95,7 +92,7 @@ export default class ConfigService extends Service {
 
 
 class Config {
-	
+
 	constructor(app) {
 		this._dynamic_config = {};
 		this._defaults = {};

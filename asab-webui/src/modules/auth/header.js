@@ -1,5 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
 	UncontrolledDropdown,
@@ -31,23 +32,18 @@ function HeaderComponent(props) {
 
 	const App = props.app;
 	const { t, i18n } = useTranslation();
-	// Get service URL
-	let user_auth_url = App.getServiceURL('seacat_auth_webui');
-	// Get access control URL
-	let access_control_url = window.location.protocol + '//' + window.location.host + '#/auth/access-control';
-	// Check if Tenant service is available to get the access control URL with tenant
-	if (App.Services.TenantService) {
-		let currentTenant = App.Services.TenantService.get_current_tenant();
-		if (currentTenant) {
-			access_control_url = window.location.protocol + '//' + window.location.host + '/?tenant=' + currentTenant + '#/auth/access-control';
-		}
+
+	// Get URL of SeaCat Auth WebUI
+	// SeaCat Auth WebUI is usually build on /auth subpath
+	let user_auth_url = `${window.location.protocol}//${window.location.host}/auth`;
+	// If SeaCat Auth WebUI URL is defined in SERVICES, use it
+	if (App.Config.get('SERVICES')?.seacat_auth_webui) {
+		user_auth_url = App.getServiceURL('seacat_auth_webui');
 	}
 
 	const logout = () => {
 		props.AuthModule.logout()
 	}
-
-	// See https://github.com/coreui/coreui-free-react-admin-template/blob/b9626a8ae66834006ee86b758cdc81f74fb20531/src/containers/DefaultLayout/DefaultHeader.js#L52
 
 	return (
 		<UncontrolledDropdown direction="down" className="pr-3">
@@ -59,8 +55,8 @@ function HeaderComponent(props) {
 				<span className="pl-2" title={props.sub}>{props.username}</span>
 			</DropdownToggle>
 			<DropdownMenu>
-				<DropdownItem header tag="div" className="text-center"><strong>{t('AuthHeaderDropdown|My account')}</strong></DropdownItem>
-				<DropdownItem tag="a" href={access_control_url}>
+				<DropdownItem header>{t('AuthHeaderDropdown|My account')}</DropdownItem>
+				<DropdownItem tag={Link} to="/auth/access-control">
 					{t('AuthHeaderDropdown|Access control')}
 				</DropdownItem>
 				{user_auth_url != null &&

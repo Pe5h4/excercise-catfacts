@@ -3,9 +3,6 @@ import ReactDOM from 'react-dom';
 import { Application } from 'asab-webui';
 import { HashRouter } from 'react-router-dom';
 
-// SCSS
-import './index.scss'
-
 // Configuration
 let ConfigDefaults = {
 	title: "ASAB App",
@@ -19,59 +16,12 @@ let ConfigDefaults = {
 		href: "https://teskalabs.com/",
 	},
 	default_help_url: "https://github.com/TeskaLabs/asab-webui",
-	table: {
-		headers: [ 
-			{ 
-				name: 'Link',
-				key: 'username',
-				link: {
-					pathname: '/pathname/',
-					key: 'username'
-				}
-			},
-			{
-				name: 'DateTime',
-				key: '_c',
-				datetime: { format: 'lll' }
-			},
-			{ 
-				name: 'Text', 
-				key: '_provider_id' 
-			},
-			{
-				name: 'Custom',
-				customComponent: {
-					generate: (obj) => (
-						<div style={{ color: "red"}}>
-							<p style={{ margin: 0}}>{obj.username}</p>
-							<p style={{ margin: 0}}>{obj._type}</p>
-						</div>
-					),
-					onDownload: (obj) => `${obj.username}/${obj._type}`
-				}
-			},
-			{
-				name: 'JSON',
-				key: 'json',
-				json: true
-			},
-			{
-				name: ' ',
-				actionButton: {
-					title: "Actions",
-					actions: [
-						{
-							name: "Show name",
-							onClick(row, header) {
-								alert(`Showing name: ${row.username}`)
-							}
-						}
-					]
-				}
-			}
-		],
-		limit: 10
-	}
+	i18n: {
+		fallbackLng: 'en',
+		supportedLngs: ['en', 'cs'],
+		debug: false,
+	},
+	sidebarItemsOrder: ["Table", "Home"]
 };
 
 // Modules
@@ -79,6 +29,10 @@ const modules = [];
 
 // Load custom modules
 import HomeModule from './modules/home';
+
+// Load default modules
+import I18nModule from 'asab-webui/modules/i18n';
+modules.push(I18nModule);
 
 if (__CONFIG__.modules !== null) {
 	Object.values(__CONFIG__.modules).map((module_name) => {

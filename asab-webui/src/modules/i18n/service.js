@@ -38,17 +38,39 @@ export default class I18nService extends Service {
 		// Set default key separator
 		config.keySeparator = "|";
 
-		i18n
-		.use(HttpBackend)
-		.use(initReactI18next)
-		.use(LanguageDetector)
-		.init(config, (err, t) => {
-			this.App.removeSplashScreenRequestor(this);
-			if (err) {
-				//TODO: only in case of final error, show: app.addAlert("warning", "Failed to load localizations.");
-				console.log('Failed to load localizations:', err);
-			}
-		});
+		// Set backend paths if not specified
+		if (!config.backend) {
+			let paths = {}
+			paths['addPath'] = window.location.pathname + "locales/add/{{lng}}/{{ns}}";
+			paths['loadPath'] = window.location.pathname + "locales/{{lng}}/{{ns}}.json";
+			config['backend'] = paths;
+		}
+
+		this.i18n = i18n
+			.use(HttpBackend)
+			.use(initReactI18next)
+			.use(LanguageDetector)
+			.init(config, (err, t) => {
+				this.App.removeSplashScreenRequestor(this);
+				if (err) {
+					//TODO: only in case of final error, show: app.addAlert("warning", "Failed to load localizations.");
+					console.log('Failed to load localizations:', err);
+				}
+				t
+			});
+		
+		this.getPromise = this.getPromise.bind(this);
+		this.t = this.t.bind(this);
+
+		app.i18n = this;
+	}
+
+	getPromise () {
+		return this.i18n;
+	}
+
+	async t(str) {
+		return await this.i18n.then(t => t(str));
 	}
 
 }

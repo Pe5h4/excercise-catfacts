@@ -3,9 +3,6 @@ import ReactDOM from 'react-dom';
 import { Application } from 'asab-webui';
 import { HashRouter } from 'react-router-dom';
 
-// SCSS
-import './index.scss'
-
 // Configuration
 let ConfigDefaults = {
 	title: "ASAB App",
@@ -25,9 +22,11 @@ let ConfigDefaults = {
 const modules = [];
 
 // Load custom modules
+import I18nModule from 'asab-webui/modules/i18n';
+modules.push(I18nModule);
+
 import HomeModule from './modules/home';
 modules.push(HomeModule)
-
 
 // Render
 ReactDOM.render((

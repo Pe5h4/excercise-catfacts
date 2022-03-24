@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Button, Card, CardHeader, CardFooter, CardBody, Table, Col, Row } from 'reactstrap';
-import axios from 'axios'
+import axios from 'axios';
 
 
 function CatFacts(props) {
